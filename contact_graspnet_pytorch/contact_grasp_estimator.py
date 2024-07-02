@@ -5,8 +5,8 @@ import sys
 import os
 import time
 
-from contact_graspnet_pytorch import config_utils
-from contact_graspnet_pytorch.data import farthest_points, \
+from . import config_utils
+from .data import farthest_points, \
     distance_by_translation_point, preprocess_pc_for_inference, \
     regularize_pc_point_count, depth2pc, reject_median_outliers
 

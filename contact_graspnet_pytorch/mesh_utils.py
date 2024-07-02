@@ -179,7 +179,8 @@ class PandaGripper(object):
         return control_points
 
 
-def create_gripper(name, configuration=None, root_folder=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))):
+# def create_gripper(name, configuration=None, root_folder=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))):
+def create_gripper(name, configuration=None, root_folder='/home/tinker/tk23_ws/src/tk23_manipulation/src/contact_graspnet_ros2/contact_graspnet_ros2/contact_graspnet_pytorch'):
     """Create a gripper object.
 
     Arguments:
