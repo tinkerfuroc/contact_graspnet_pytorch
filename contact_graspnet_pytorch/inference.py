@@ -55,9 +55,20 @@ def inference(global_config,
 
         pc_segments = {}
         segmap, rgb, depth, cam_K, pc_full, pc_colors = load_available_input_data(p, K=K)
+        print(segmap.shape, rgb.shape, depth.shape, cam_K.shape)
+        print(segmap.min(), rgb.min(), depth.min(), cam_K.min())
+        print(segmap.max(), rgb.max(), depth.max(), cam_K.max())
+        print(segmap.dtype, rgb.dtype, depth.dtype, cam_K.dtype)
         
         if segmap is None and (local_regions or filter_grasps):
             raise ValueError('Need segmentation map to extract local regions or filter grasps')
+
+        # print(segmap.shape, rgb.shape)
+        # import matplotlib.pyplot as plt
+        # plt.imshow(segmap)
+        # plt.show()
+        # plt.imshow(rgb)
+        # plt.show()
 
         if pc_full is None:
             print('Converting depth to point cloud(s)...')
@@ -74,6 +85,7 @@ def inference(global_config,
                                                                                        filter_grasps=filter_grasps, 
                                                                                        forward_passes=forward_passes)  
     
+        print(pred_grasps_cam[1.0].shape)
         # Save results
         np.savez('results/predictions_{}'.format(os.path.basename(p.replace('png','npz').replace('npy','npz'))), 
                   pc_full=pc_full, pred_grasps_cam=pred_grasps_cam, scores=scores, contact_pts=contact_pts, pc_colors=pc_colors)
@@ -84,7 +96,49 @@ def inference(global_config,
         
     if not glob.glob(input_paths):
         print('No files found: ', input_paths)
-        
+
+
+def inference_light(grasp_estimator,
+                    depth,
+                    cam_K,
+                    segmap=None,
+                    rgb=None,
+                    local_regions=True,
+                    filter_grasps=True,
+                    skip_border_objects=False,
+                    z_range = [0.2,1.8],
+                    forward_passes=1,
+                    visualize=False):
+    """
+    Similiar to inference(), but without building the model and visualizing
+    """
+    
+    if segmap is None and (local_regions or filter_grasps):
+        raise ValueError('Need segmentation map to extract local regions or filter grasps')
+
+    cam_K = np.array(cam_K).reshape(3, 3)
+    print('Converting depth to point cloud(s)...')
+    pc_full, pc_segments, pc_colors = grasp_estimator.extract_point_clouds(depth, cam_K, segmap=segmap, rgb=rgb,
+                                                                           skip_border_objects=skip_border_objects,
+                                                                           z_range=z_range)
+    
+    print(pc_full.shape)
+
+    print('Generating Grasps...')
+    pred_grasps_cam, scores, contact_pts, _ = grasp_estimator.predict_scene_grasps(pc_full, 
+                                                                                   pc_segments=pc_segments, 
+                                                                                   local_regions=local_regions, 
+                                                                                   filter_grasps=filter_grasps, 
+                                                                                   forward_passes=forward_passes)  
+
+    # Visualize results     
+    if visualize:
+        show_image(rgb, segmap)
+        visualize_grasps(pc_full, pred_grasps_cam, scores, plot_opencv_cam=True, pc_colors=pc_colors)
+    
+    return pred_grasps_cam, scores, contact_pts
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
